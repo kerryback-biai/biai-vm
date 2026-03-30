@@ -89,6 +89,31 @@ CLAUDEMD
     done
 fi
 
+# Login banner displayed after authentication
+cat > /etc/motd << 'MOTD'
+
+  ╔══════════════════════════════════════════════════╗
+  ║     From BI to AI — Data Agent Workshop          ║
+  ║     Meridian Corp Executive Program              ║
+  ╚══════════════════════════════════════════════════╝
+
+  To get started:
+    cd workspace
+    claude
+
+  Your exercise files are in ~/workspace/.
+  Type 'quit' or Ctrl-C to exit Claude Code.
+
+MOTD
+
+# Pre-login banner displayed on the ttyd login screen
+cat > /etc/issue.net << 'ISSUE'
+
+  Welcome to the BI-to-AI Workshop Server
+  Log in with the credentials provided by your instructor.
+
+ISSUE
+cp /etc/issue.net /etc/issue
+
 # Start ttyd web terminal on port 8000
-# --writable allows input; login prompt lets students authenticate
-exec ttyd --port 8000 --writable login
+exec ttyd --port 8000 --writable -t titleFixed="BI to AI Workshop" login
