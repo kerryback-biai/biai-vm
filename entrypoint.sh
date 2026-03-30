@@ -112,14 +112,20 @@ cat > /etc/motd << 'MOTD'
 
 MOTD
 
-# Pre-login banner displayed on the ttyd login screen
-cat > /etc/issue.net << 'ISSUE'
-
-  Welcome to the BI-to-AI Workshop Server
-  Log in with the credentials provided by your instructor.
-
-ISSUE
-cp /etc/issue.net /etc/issue
+# Login wrapper that shows a welcome banner before the login prompt
+cat > /usr/local/bin/login-wrapper.sh << 'WRAPPER'
+#!/bin/bash
+echo ""
+echo "  ╔══════════════════════════════════════════════════╗"
+echo "  ║     From BI to AI — Data Agent Workshop          ║"
+echo "  ║     Meridian Corp Executive Program              ║"
+echo "  ╚══════════════════════════════════════════════════╝"
+echo ""
+echo "  Log in with the credentials provided by your instructor."
+echo ""
+exec login
+WRAPPER
+chmod +x /usr/local/bin/login-wrapper.sh
 
 # Start ttyd web terminal on port 8000
-exec ttyd --port 8000 --writable -t titleFixed="BI to AI Workshop" login
+exec ttyd --port 8000 --writable -t titleFixed="BI to AI Workshop" /usr/local/bin/login-wrapper.sh
