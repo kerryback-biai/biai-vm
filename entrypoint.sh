@@ -106,9 +106,11 @@ MOTD
 cat > /usr/local/bin/login-wrapper.sh << 'WRAPPER'
 #!/bin/bash
 echo ""
-echo "  BI to AI: Making Data-Driven Decisions with Agentic AI"
-echo "  Rice Business Executive Education"
-echo "  Claude Code/Python Lab"
+echo "  ╔════════════════════════════════════════════════════════════╗"
+echo "  ║   BI to AI: Making Data-Driven Decisions with Agentic AI  ║"
+echo "  ║            Rice Business Executive Education               ║"
+echo "  ║                 Claude Code/Python Lab                     ║"
+echo "  ╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "  Login with the credentials provided by your instructor."
 echo "  Type claude and press Enter. Chat."
