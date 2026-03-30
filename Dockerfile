@@ -27,7 +27,8 @@ RUN npm install -g pptxgenjs
 RUN pip3 install --break-system-packages \
     anthropic duckdb pandas numpy matplotlib \
     fastapi uvicorn httpx \
-    openpyxl defusedxml lxml markitdown Pillow
+    openpyxl defusedxml lxml markitdown Pillow \
+    psycopg2-binary
 
 # 6. Create shared directories
 RUN mkdir -p /shared/data /shared/templates /shared/skills
@@ -37,7 +38,8 @@ COPY templates/ /shared/templates/
 COPY exercises/ /shared/exercises/
 COPY skills/ /shared/skills/
 
-# 8. Copy entrypoint
+# 8. Copy entrypoint and database fetch script
+COPY fetch-students.py /fetch-students.py
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

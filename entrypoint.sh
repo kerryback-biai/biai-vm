@@ -10,12 +10,18 @@ if [ -n "$ANTHROPIC_API_KEY" ]; then
     chmod 644 /etc/profile.d/anthropic.sh
 fi
 
-# Create student accounts from STUDENTS env var
-# Format: "user1:pass1,user2:pass2"
-if [ -n "$STUDENTS" ]; then
-    IFS=',' read -ra PAIRS <<< "$STUDENTS"
-    for pair in "${PAIRS[@]}"; do
-        IFS=':' read -r USERNAME PASSWORD <<< "$pair"
+# Create student accounts from shared database
+# Falls back to STUDENTS env var if DATABASE_URL is not set
+STUDENT_LIST=""
+if [ -n "$DATABASE_URL" ]; then
+    STUDENT_LIST=$(python3 /fetch-students.py 2>/dev/null || true)
+elif [ -n "$STUDENTS" ]; then
+    # Legacy format: "user1:pass1,user2:pass2"
+    STUDENT_LIST=$(echo "$STUDENTS" | tr ',' '\n')
+fi
+
+if [ -n "$STUDENT_LIST" ]; then
+    while IFS=: read -r USERNAME PASSWORD; do
         [ -z "$USERNAME" ] && continue
 
         if ! id "$USERNAME" &>/dev/null; then
@@ -86,7 +92,7 @@ CLAUDEMD
             chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
             echo "Created student: $USERNAME"
         fi
-    done
+    done <<< "$STUDENT_LIST"
 fi
 
 # Login banner displayed after authentication
