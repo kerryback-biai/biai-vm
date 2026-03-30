@@ -98,17 +98,7 @@ fi
 # Login banner displayed after authentication
 cat > /etc/motd << 'MOTD'
 
-  ╔══════════════════════════════════════════════════╗
-  ║     From BI to AI — Data Agent Workshop          ║
-  ║     Meridian Corp Executive Program              ║
-  ╚══════════════════════════════════════════════════╝
-
-  To get started:
-    cd workspace
-    claude
-
-  Your exercise files are in ~/workspace/.
-  Type 'quit' or Ctrl-C to exit Claude Code.
+  Type claude and press Enter. Chat.
 
 MOTD
 
@@ -116,12 +106,12 @@ MOTD
 cat > /usr/local/bin/login-wrapper.sh << 'WRAPPER'
 #!/bin/bash
 echo ""
-echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║     From BI to AI — Data Agent Workshop          ║"
-echo "  ║     Meridian Corp Executive Program              ║"
-echo "  ╚══════════════════════════════════════════════════╝"
+echo "  BI to AI: Making Data-Driven Decisions with Agentic AI"
+echo "  Rice Business Executive Education"
+echo "  Claude Code/Python Lab"
 echo ""
-echo "  Log in with the credentials provided by your instructor."
+echo "  Login with the credentials provided by your instructor."
+echo "  Type claude and press Enter. Chat."
 echo ""
 exec login
 WRAPPER
