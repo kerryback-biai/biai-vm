@@ -15,7 +15,7 @@ if not DATABASE_URL:
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 cur.execute("""
-    SELECT u.email, a.vm_password
+    SELECT u.username, a.vm_password
     FROM users u
     JOIN app_access a ON u.id = a.user_id
     WHERE a.app_name = 'vm'
