@@ -95,30 +95,57 @@ CLAUDEMD
     done <<< "$STUDENT_LIST"
 fi
 
-# Login banner displayed after authentication
-cat > /etc/motd << 'MOTD'
+# Auto-launch claude in terminal for each student
+if [ -n "$STUDENT_LIST" ]; then
+    while IFS=: read -r USERNAME PASSWORD; do
+        [ -z "$USERNAME" ] && continue
 
-  Type claude and press Enter. Chat.
+        cat >> "/home/$USERNAME/.bashrc" << 'BASHRC'
 
-MOTD
+# Welcome banner and auto-launch Claude Code
+if [ -t 1 ] && [ -z "$CLAUDE_LAUNCHED" ]; then
+    echo ""
+    echo "  ╔════════════════════════════════════════════════════════════╗"
+    echo "  ║   BI to AI: Making Data-Driven Decisions with Agentic AI  ║"
+    echo "  ║            Rice Business Executive Education               ║"
+    echo "  ║                  Professor Kerry Back                      ║"
+    echo "  ║              Claude Code with Python Lab                   ║"
+    echo "  ╚════════════════════════════════════════════════════════════╝"
+    echo ""
+    export CLAUDE_LAUNCHED=1
+    cd ~/workspace
+    exec claude
+fi
+BASHRC
 
-# Login wrapper that shows a welcome banner before the login prompt
-cat > /usr/local/bin/login-wrapper.sh << 'WRAPPER'
-#!/bin/bash
-echo ""
-echo "  ╔════════════════════════════════════════════════════════════╗"
-echo "  ║   BI to AI: Making Data-Driven Decisions with Agentic AI  ║"
-echo "  ║            Rice Business Executive Education               ║"
-echo "  ║                  Professor Kerry Back                      ║"
-echo "  ║              Claude Code with Python Lab                   ║"
-echo "  ╚════════════════════════════════════════════════════════════╝"
-echo ""
-echo "  Login with the credentials provided by your instructor."
-echo "  Type claude and press Enter. Chat."
-echo ""
-exec login
-WRAPPER
-chmod +x /usr/local/bin/login-wrapper.sh
+        chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
+    done <<< "$STUDENT_LIST"
+fi
 
-# Start ttyd web terminal on port 8000
-exec ttyd --port 8000 --writable -t titleFixed="BI to AI Workshop" /usr/local/bin/login-wrapper.sh
+# Use the admin account for code-server, or fall back to first student
+ADMIN_USER=""
+ADMIN_PASS=""
+if [ -n "$STUDENT_LIST" ]; then
+    while IFS=: read -r USERNAME PASSWORD; do
+        if [ -z "$ADMIN_USER" ]; then
+            ADMIN_USER="$USERNAME"
+            ADMIN_PASS="$PASSWORD"
+            break
+        fi
+    done <<< "$STUDENT_LIST"
+fi
+
+if [ -n "$ADMIN_USER" ]; then
+    export PASSWORD="$ADMIN_PASS"
+    exec su -l "$ADMIN_USER" -c "
+        export ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\"
+        export PASSWORD=\"$ADMIN_PASS\"
+        code-server \
+            --bind-addr 0.0.0.0:8000 \
+            --auth password \
+            \"/home/$ADMIN_USER/workspace\"
+    "
+else
+    echo "No students configured. Set DATABASE_URL or STUDENTS env var."
+    exec code-server --bind-addr 0.0.0.0:8000 --auth none /tmp
+fi

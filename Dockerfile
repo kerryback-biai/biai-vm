@@ -12,10 +12,8 @@ RUN apt-get update && apt-get install -y \
     openssh-server \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install ttyd (web-based terminal)
-RUN wget -qO /usr/local/bin/ttyd \
-    https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 \
-    && chmod +x /usr/local/bin/ttyd
+# 2. Install code-server (VS Code in the browser)
+RUN curl -fsSL https://code-server.dev/install.sh | sh
 
 # 3. Install Claude Code globally
 RUN npm install -g @anthropic-ai/claude-code
