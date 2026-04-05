@@ -17,8 +17,7 @@ cur = conn.cursor()
 cur.execute("""
     SELECT username, vm_password
     FROM users
-    WHERE services LIKE '%ai-lab%'
-      AND is_active = TRUE
+    WHERE is_active = TRUE
       AND vm_password IS NOT NULL
 """)
 for username, password in cur.fetchall():
