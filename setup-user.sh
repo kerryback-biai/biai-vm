@@ -119,7 +119,7 @@ Type=simple
 User=$USERNAME
 Environment=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 WorkingDirectory=/home/$USERNAME/workspace
-ExecStart=/usr/local/bin/ttyd --port $TTYD_PORT --writable --base-path /$USERNAME/ -t titleFixed="AI+Code Lab" bash -l
+ExecStart=/usr/local/bin/ttyd --port $TTYD_PORT --writable --base-path /$USERNAME/ -t titleFixed="AI Lab" bash -l
 Restart=on-failure
 
 [Install]
@@ -142,6 +142,14 @@ Restart=on-failure
 WantedBy=multi-user.target
 SYSTEMD
 
+# Initialize FileBrowser database with admin perm disabled
+FB_DB="/home/$USERNAME/.filebrowser.db"
+if [ ! -f "$FB_DB" ]; then
+    filebrowser config init --database "$FB_DB"
+fi
+filebrowser config set --database "$FB_DB" --perm.admin=false
+chown "$USERNAME" "$FB_DB"
+
 systemctl daemon-reload
 systemctl enable --now "ttyd-${USERNAME}.service"
 systemctl enable --now "filebrowser-${USERNAME}.service"
@@ -150,4 +158,4 @@ systemctl enable --now "filebrowser-${USERNAME}.service"
 bash /opt/biai-vm/generate-nginx.sh
 
 echo "Done: $USERNAME (terminal=:$TTYD_PORT, files=:$FB_PORT)"
-echo "URL: https://vm.kerryback.com/$USERNAME/"
+echo "URL: https://ai-lab.rice-business.org/$USERNAME/"

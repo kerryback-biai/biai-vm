@@ -1,5 +1,5 @@
 """Login page with admin panel for user management."""
-import grp
+import os
 import subprocess
 from fastapi import FastAPI, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,7 +7,12 @@ from typing import Optional
 import secrets
 import time
 
+import psycopg2
+import psycopg2.extras
+
 app = FastAPI()
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 # Simple session store: token -> (username, expiry)
 sessions: dict[str, tuple[str, float]] = {}
@@ -15,35 +20,35 @@ SESSION_HOURS = 12
 DEFAULT_PASSWORD = "execed@rice"
 
 BANNER_STYLE = """
-body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #1e1e2e; color: #cdd6f4; }
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #7C7E7F; color: #333; }
 .banner { text-align: center; padding: 24px 0 8px; position: relative; }
-.banner h1 { font-size: 1.5em; margin: 0; color: #89b4fa; }
-.banner p { margin: 4px 0; font-size: 0.95em; color: #a6adc8; }
-.card { max-width: 420px; margin: 40px auto; background: #313244; border-radius: 12px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
-.card h2 { margin: 0 0 20px; font-size: 1.1em; text-align: center; color: #cdd6f4; font-weight: normal; }
-label { display: block; margin-bottom: 4px; font-size: 0.85em; color: #a6adc8; }
-input { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #45475a; border-radius: 6px; background: #1e1e2e; color: #cdd6f4; font-size: 1em; box-sizing: border-box; }
-input:focus { outline: none; border-color: #89b4fa; }
-button, .btn { padding: 10px; border: none; border-radius: 6px; background: #89b4fa; color: #1e1e2e; font-size: 1em; font-weight: 600; cursor: pointer; }
-button:hover, .btn:hover { background: #74c7ec; }
+.banner h1 { font-size: 1.5em; margin: 0; color: #ffffff; }
+.banner p { margin: 4px 0; font-size: 0.95em; color: #e0e0e0; }
+.card { max-width: 420px; margin: 40px auto; background: #ffffff; border-radius: 4px; padding: 32px; box-shadow: 0 0 20px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.24); }
+.card h2 { margin: 0 0 20px; font-size: 1.1em; text-align: center; color: #333; font-weight: normal; }
+label { display: block; margin-bottom: 4px; font-size: 0.85em; color: #555; }
+input { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 4px; background: #f2f2f2; color: #333; font-size: 1em; box-sizing: border-box; }
+input:focus { outline: none; border-color: #00205B; }
+button, .btn { padding: 10px; border: none; border-radius: 4px; background: #00205B; color: #ffffff; font-size: 1em; font-weight: 600; cursor: pointer; text-transform: uppercase; }
+button:hover, .btn:hover { background: #00205B; filter: brightness(85%); }
 .btn-full { width: 100%; }
-.error { color: #f38ba8; text-align: center; margin-bottom: 12px; font-size: 0.9em; }
-.success { color: #a6e3a1; text-align: center; margin-bottom: 12px; font-size: 0.9em; }
-.instructions { font-size: 0.9em; color: #a6adc8; line-height: 1.6; margin-top: 16px; }
-.about-btn { position: absolute; bottom: 5px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #a6adc8; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-.about-btn:hover { background: rgba(255,255,255,0.2); color: #cdd6f4; transform: scale(1.1); }
-.about-tooltip { position: absolute; bottom: 40px; right: 0; background: #45475a; color: #cdd6f4; padding: 10px 14px; border-radius: 8px; font-size: 0.8em; line-height: 1.5; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; pointer-events: none; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.error { color: #cc0000; text-align: center; margin-bottom: 12px; font-size: 0.9em; }
+.success { color: #2e7d32; text-align: center; margin-bottom: 12px; font-size: 0.9em; }
+.instructions { font-size: 0.9em; color: #555; line-height: 1.6; margin-top: 16px; }
+.about-btn { position: absolute; bottom: 5px; right: 20px; background: rgba(255,255,255,0.15); border: none; color: #e0e0e0; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.about-btn:hover { background: rgba(255,255,255,0.3); color: #fff; transform: scale(1.1); }
+.about-tooltip { position: absolute; bottom: 40px; right: 0; background: #00205B; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.8em; line-height: 1.5; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; pointer-events: none; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
 .about-btn:hover .about-tooltip { opacity: 1; visibility: visible; pointer-events: auto; }
-.about-tooltip::before { content: ''; position: absolute; bottom: -4px; right: 12px; width: 8px; height: 8px; background: #45475a; transform: rotate(45deg); }
-.admin-link { position: absolute; bottom: 5px; left: 20px; background: rgba(255,255,255,0.1); border: none; color: #a6adc8; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; text-decoration: none; }
-.admin-link:hover { background: rgba(255,255,255,0.2); color: #cdd6f4; transform: scale(1.1); }
+.about-tooltip::before { content: ''; position: absolute; bottom: -4px; right: 12px; width: 8px; height: 8px; background: #00205B; transform: rotate(45deg); }
+.admin-link { position: absolute; bottom: 5px; left: 20px; background: rgba(255,255,255,0.15); border: none; color: #e0e0e0; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; text-decoration: none; }
+.admin-link:hover { background: rgba(255,255,255,0.3); color: #fff; transform: scale(1.1); }
 table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
-th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #45475a; }
-th { color: #a6adc8; font-weight: normal; font-size: 0.85em; }
-td { color: #cdd6f4; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #ddd; }
+th { color: #555; font-weight: normal; font-size: 0.85em; }
+td { color: #333; }
 .btn-sm { padding: 4px 10px; font-size: 0.8em; border-radius: 4px; }
-.btn-danger { background: #f38ba8; }
-.btn-danger:hover { background: #eba0ac; }
+.btn-danger { background: #cc0000; }
+.btn-danger:hover { background: #aa0000; filter: none; }
 .admin-card { max-width: 560px; }
 .add-form { display: flex; gap: 8px; align-items: end; }
 .add-form input { margin-bottom: 0; flex: 1; }
@@ -54,18 +59,17 @@ ABOUT_WIDGET = """<div class="about-btn">&#9432;<div class="about-tooltip">Devel
 
 LOGIN_PAGE = """<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI+Code Lab</title><style>{style}</style></head>
+<title>AI Lab</title><style>{style}</style></head>
 <body>
 <div class="banner">
-  <h1>AI+Code Lab</h1>
+  <h1>AI Lab</h1>
   <p>Rice Business Executive Education</p>
   {about}
 </div>
 <div class="card">
   <h2>Log in to your workspace</h2>
   <div class="instructions">
-    <p>After logging in, two new tabs will open: one with a File Explorer
-    view and one with a terminal in which you can open Claude Code.</p>
+    <p>Log in to access your terminal and file explorer.</p>
   </div>
   {error}
   <form method="post" action="/login" style="margin-top:20px">
@@ -78,46 +82,107 @@ LOGIN_PAGE = """<!DOCTYPE html>
 </div>
 </body></html>"""
 
-LAUNCH_PAGE = """<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>AI+Code Lab</title>
-<style>{style}
-.card {{ text-align: center; max-width: 480px; }}
-.card a {{ color: #89b4fa; text-decoration: none; display: inline-block; margin: 8px 12px; font-size: 1em; }}
-.card a:hover {{ text-decoration: underline; }}
+WORKSPACE_PAGE = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Lab — {username}</title>
+<style>
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
+.toolbar {{
+    height: 36px; background: #00205B; color: #fff;
+    display: flex; align-items: center; padding: 0 16px;
+    font-size: 13px; gap: 12px;
+}}
+.toolbar .title {{ font-weight: 600; letter-spacing: 0.3px; }}
+.toolbar .sep {{ opacity: 0.4; }}
+.toolbar .subtitle {{ opacity: 0.85; font-size: 12px; }}
+.toolbar .spacer {{ flex: 1; }}
+.toolbar a {{ color: rgba(255,255,255,0.7); text-decoration: none; font-size: 12px; }}
+.toolbar a:hover {{ color: #fff; }}
+.workspace {{ display: flex; height: calc(100% - 36px); }}
+.pane {{ overflow: hidden; position: relative; }}
+.pane iframe {{ width: 100%; height: 100%; border: none; }}
+.pane-label {{
+    position: absolute; top: 0; left: 0; right: 0; height: 24px;
+    background: rgba(0,32,91,0.85); color: #fff; font-size: 11px;
+    display: flex; align-items: center; padding: 0 10px;
+    letter-spacing: 0.3px; z-index: 10; opacity: 0.9;
+}}
+.divider {{
+    width: 5px; background: #00205B; cursor: col-resize;
+    flex-shrink: 0; position: relative; z-index: 20;
+}}
+.divider:hover, .divider.active {{ background: #003a9e; }}
 </style>
-<script>
-window.onload = function() {{
-    window.open("/{username}/", "_blank");
-    window.open("/{username}/files/", "_blank");
-}};
-</script>
 </head>
 <body>
-<div class="banner">
-  <h1>AI+Code Lab</h1>
-  <p>Rice Business Executive Education</p>
-  {admin_icon}
-  {about}
+<div class="toolbar">
+    <span class="title">AI Lab</span>
+    <span class="sep">|</span>
+    <span class="subtitle">Rice Business Executive Education</span>
+    <span class="spacer"></span>
+    <span style="opacity:0.7">{username}</span>
+    {admin_link}
+    <a href="/">Logout</a>
 </div>
-<div class="card">
-  <h2>Welcome, {username}</h2>
-  <p>Two tabs should have opened:</p>
-  <p>
-    <a href="/{username}/" target="_blank">Terminal</a>
-    <a href="/{username}/files/" target="_blank">File Explorer</a>
-  </p>
-  <p style="font-size:0.85em;color:#a6adc8;margin-top:16px">
-    If tabs were blocked by your browser, click the links above.
-  </p>
+<div class="workspace">
+    <div class="pane" id="pane-left" style="flex: 1 1 45%;">
+        <div class="pane-label">Files</div>
+        <iframe src="/{username}/files/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
+    </div>
+    <div class="divider" id="divider"></div>
+    <div class="pane" id="pane-right" style="flex: 1 1 55%;">
+        <div class="pane-label">Terminal</div>
+        <iframe src="/{username}/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
+    </div>
 </div>
+<script>
+(function() {{
+    const divider = document.getElementById('divider');
+    const left = document.getElementById('pane-left');
+    const right = document.getElementById('pane-right');
+    const workspace = document.querySelector('.workspace');
+    let dragging = false;
+
+    divider.addEventListener('mousedown', function(e) {{
+        dragging = true;
+        divider.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        // Prevent iframes from capturing mouse events while dragging
+        left.querySelector('iframe').style.pointerEvents = 'none';
+        right.querySelector('iframe').style.pointerEvents = 'none';
+        e.preventDefault();
+    }});
+
+    document.addEventListener('mousemove', function(e) {{
+        if (!dragging) return;
+        const rect = workspace.getBoundingClientRect();
+        const pct = ((e.clientX - rect.left) / rect.width) * 100;
+        if (pct < 20 || pct > 80) return;
+        left.style.flex = '0 0 ' + pct + '%';
+        right.style.flex = '0 0 ' + (100 - pct) + '%';
+    }});
+
+    document.addEventListener('mouseup', function() {{
+        if (!dragging) return;
+        dragging = false;
+        divider.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        left.querySelector('iframe').style.pointerEvents = '';
+        right.querySelector('iframe').style.pointerEvents = '';
+    }});
+}})();
+</script>
 </body></html>"""
 
 ADMIN_PAGE = """<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI+Code Lab — Admin</title><style>{style}</style></head>
+<title>AI Lab — Admin</title><style>{style}</style></head>
 <body>
 <div class="banner">
-  <h1>AI+Code Lab</h1>
+  <h1>AI Lab</h1>
   <p>Rice Business Executive Education</p>
   {about}
 </div>
@@ -125,7 +190,7 @@ ADMIN_PAGE = """<!DOCTYPE html>
   <h2>&#9881; User Management</h2>
   {message}
   <form method="post" action="/admin/add" style="margin-bottom: 20px;">
-    <label>Add user (password will be set to <code style="color:#89b4fa">{default_password}</code>)</label>
+    <label>Add user (password will be set to <code style="color:#00205B">{default_password}</code>)</label>
     <div class="add-form">
       <input type="text" name="new_username" placeholder="firstname_lastname" required>
       <button type="submit" class="btn">Add</button>
@@ -136,7 +201,7 @@ ADMIN_PAGE = """<!DOCTYPE html>
     {user_rows}
   </table>
   <p style="text-align:center;margin-top:20px">
-    <a href="/" style="color:#89b4fa;text-decoration:none">&larr; Back to login</a>
+    <a href="/" style="color:#00205B;text-decoration:none">&larr; Back to login</a>
   </p>
 </div>
 </body></html>"""
@@ -156,11 +221,20 @@ def check_credentials(username: str, password: str) -> bool:
 
 
 def is_admin(username: str) -> bool:
-    """Check if user is in the sudo group."""
+    """Check if user has is_admin=true in the database."""
+    if not DATABASE_URL:
+        return False
     try:
-        sudo_group = grp.getgrnam("sudo")
-        return username in sudo_group.gr_mem
-    except KeyError:
+        conn = psycopg2.connect(DATABASE_URL)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT is_admin FROM users WHERE username = %s AND is_active = true",
+                (username,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        return bool(row and row[0])
+    except Exception:
         return False
 
 
@@ -245,26 +319,29 @@ def login_form():
     return LOGIN_PAGE.format(style=BANNER_STYLE, about=ABOUT_WIDGET, error="")
 
 
-@app.post("/login", response_class=HTMLResponse)
+@app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
     if check_credentials(username, password):
         token = secrets.token_urlsafe(32)
         sessions[token] = (username, time.time() + SESSION_HOURS * 3600)
-        admin_icon = ""
-        if is_admin(username):
-            admin_icon = '<a href="/admin" class="admin-link" title="Admin">&#9881;</a>'
-        response = HTMLResponse(
-            LAUNCH_PAGE.format(
-                style=BANNER_STYLE, about=ABOUT_WIDGET,
-                username=username, admin_icon=admin_icon,
-            )
-        )
+        response = RedirectResponse("/workspace", status_code=303)
         response.set_cookie("session", token, max_age=SESSION_HOURS * 3600)
         return response
-    return LOGIN_PAGE.format(
+    return HTMLResponse(LOGIN_PAGE.format(
         style=BANNER_STYLE, about=ABOUT_WIDGET,
         error='<p class="error">Invalid username or password.</p>',
-    )
+    ))
+
+
+@app.get("/workspace", response_class=HTMLResponse)
+def workspace(session: Optional[str] = Cookie(None)):
+    username = get_session_user(session)
+    if not username:
+        return RedirectResponse("/", status_code=303)
+    admin_link = ""
+    if is_admin(username):
+        admin_link = '<a href="/admin">Admin</a>'
+    return WORKSPACE_PAGE.format(username=username, admin_link=admin_link)
 
 
 @app.get("/admin", response_class=HTMLResponse)
