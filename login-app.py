@@ -126,12 +126,12 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
     <a href="/">Logout</a>
 </div>
 <div class="workspace">
-    <div class="pane" id="pane-left" style="flex: 1 1 45%;">
+    <div class="pane" id="pane-left" style="flex: 1 1 40%;">
         <div class="pane-label">Files</div>
         <iframe src="/{username}/files/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
     </div>
     <div class="divider" id="divider"></div>
-    <div class="pane" id="pane-right" style="flex: 1 1 55%;">
+    <div class="pane" id="pane-right" style="flex: 1 1 60%;">
         <div class="pane-label">Terminal</div>
         <iframe src="/{username}/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
     </div>
