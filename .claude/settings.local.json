@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(koyeb app:*)",
+      "Bash(koyeb organization:*)",
+      "Bash(koyeb organizations:*)"
+    ]
+  }
+}

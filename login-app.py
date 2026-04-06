@@ -1,8 +1,9 @@
 """Login page with admin panel for user management."""
 import os
+import re
 import subprocess
-from fastapi import FastAPI, Form, Cookie
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Form, Cookie, Header, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from typing import Optional
 import secrets
 import time
@@ -13,6 +14,7 @@ import psycopg2.extras
 app = FastAPI()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+PROVISION_SECRET = os.environ.get("PROVISION_SECRET", "")
 
 # Simple session store: token -> (username, expiry)
 sessions: dict[str, tuple[str, float]] = {}
@@ -68,9 +70,6 @@ LOGIN_PAGE = """<!DOCTYPE html>
 </div>
 <div class="card">
   <h2>Log in to your workspace</h2>
-  <div class="instructions">
-    <p>Log in to access your terminal and file explorer.</p>
-  </div>
   {error}
   <form method="post" action="/login" style="margin-top:20px">
     <label for="username">Username</label>
@@ -263,17 +262,27 @@ def list_workshop_users() -> list[dict]:
     return users
 
 
-def add_user(username: str) -> tuple[bool, str]:
+def add_user(username: str, password: str = DEFAULT_PASSWORD) -> tuple[bool, str]:
     """Create a Linux user and set up their workspace."""
+    if not re.match(r'^[a-z][a-z0-9_]{0,31}$', username):
+        return False, f"Invalid username '{username}'."
     result = subprocess.run(
         ["bash", "-c", f"""
+            id '{username}' &>/dev/null && echo 'exists' && exit 0
             useradd -m -s /bin/bash -N '{username}' 2>&1 && \
-            echo '{username}:{DEFAULT_PASSWORD}' | chpasswd 2>&1 && \
+            echo '{username}:{password}' | chpasswd 2>&1 && \
             bash /opt/biai-vm/setup-user.sh '{username}' 2>&1
         """],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True, text=True, timeout=60,
     )
     if result.returncode == 0:
+        if "exists" in result.stdout:
+            # User already exists — just update password
+            subprocess.run(
+                ["bash", "-c", f"echo '{username}:{password}' | chpasswd"],
+                capture_output=True, text=True, timeout=10,
+            )
+            return True, f"User '{username}' already exists, password updated."
         return True, f"User '{username}' created."
     return False, f"Failed to create '{username}': {result.stdout} {result.stderr}"
 
@@ -338,10 +347,23 @@ def workspace(session: Optional[str] = Cookie(None)):
     username = get_session_user(session)
     if not username:
         return RedirectResponse("/", status_code=303)
-    admin_link = ""
-    if is_admin(username):
-        admin_link = '<a href="/admin">Admin</a>'
-    return WORKSPACE_PAGE.format(username=username, admin_link=admin_link)
+    return WORKSPACE_PAGE.format(username=username, admin_link="")
+
+
+@app.post("/provision")
+def provision_user(
+    username: str = Form(...),
+    password: str = Form(...),
+    x_provision_secret: Optional[str] = Header(None),
+):
+    """Provision a Linux user on the VM. Called by the biai-admin app."""
+    if not PROVISION_SECRET or x_provision_secret != PROVISION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    username = username.strip().lower().replace(" ", "_")
+    ok, msg = add_user(username, password)
+    if ok:
+        return JSONResponse({"ok": True, "message": msg})
+    raise HTTPException(status_code=500, detail=msg)
 
 
 @app.get("/admin", response_class=HTMLResponse)

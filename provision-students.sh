@@ -96,6 +96,7 @@ CLAUDEMD
         cat >> "/home/$USERNAME/.bashrc" << BASHRC
 
 export ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+export ANTHROPIC_BASE_URL="http://localhost:8080/proxy/$USERNAME"
 
 # Auto-launch Claude Code in terminal
 if [ -t 1 ] && [ -z "\$CLAUDE_LAUNCHED" ]; then

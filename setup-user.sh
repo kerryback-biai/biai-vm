@@ -135,19 +135,19 @@ After=network.target
 [Service]
 Type=simple
 User=$USERNAME
-ExecStart=/usr/local/bin/filebrowser --noauth --root /home/$USERNAME/workspace --address 127.0.0.1 --port $FB_PORT --baseurl /$USERNAME/files --database /home/$USERNAME/.filebrowser.db
+ExecStart=/usr/local/bin/filebrowser --root /home/$USERNAME/workspace --address 127.0.0.1 --port $FB_PORT --baseURL /$USERNAME/files --database /home/$USERNAME/.filebrowser.db
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 SYSTEMD
 
-# Initialize FileBrowser database with admin perm disabled
+# Initialize FileBrowser database with proxy auth (no login required)
 FB_DB="/home/$USERNAME/.filebrowser.db"
 if [ ! -f "$FB_DB" ]; then
-    filebrowser config init --database "$FB_DB"
+    filebrowser config init --auth.method=proxy --auth.header=X-FB-User --database "$FB_DB"
+    filebrowser users add admin adminpassword123 --perm.admin=false --database "$FB_DB"
 fi
-filebrowser config set --database "$FB_DB" --perm.admin=false
 chown "$USERNAME" "$FB_DB"
 
 systemctl daemon-reload

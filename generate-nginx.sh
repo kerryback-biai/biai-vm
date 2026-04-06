@@ -18,12 +18,34 @@ while IFS=: read -r USERNAME TTYD_PORT FB_PORT; do
         proxy_http_version 1.1;
     }
 
-    # $USERNAME — file browser
+    # $USERNAME — file browser (proxy auth: auto-login via X-FB-User header)
+    location /$USERNAME/files/api/login {
+        proxy_pass http://127.0.0.1:$FB_PORT;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-FB-User admin;
+        proxy_http_version 1.1;
+    }
     location /$USERNAME/files/ {
         proxy_pass http://127.0.0.1:$FB_PORT;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_http_version 1.1;
+
+        # Inject auto-login script before </head>
+        proxy_set_header Accept-Encoding \"\";
+        sub_filter '</head>' '<script>
+(function(){
+  if(!localStorage.getItem(\"jwt\")){
+    fetch(\"/$USERNAME/files/api/login\").then(r=>r.text()).then(t=>{
+      localStorage.setItem(\"jwt\",t);
+      location.reload();
+    });
+  }
+})();
+</script></head>';
+        sub_filter_once on;
+        sub_filter_types text/html;
     }"
 done < "$PORTS_FILE"
 
@@ -40,6 +62,11 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
     location /login {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+    location /provision {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
