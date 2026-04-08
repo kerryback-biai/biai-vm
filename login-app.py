@@ -19,7 +19,7 @@ PROVISION_SECRET = os.environ.get("PROVISION_SECRET", "")
 # Simple session store: token -> (username, expiry)
 sessions: dict[str, tuple[str, float]] = {}
 SESSION_HOURS = 12
-DEFAULT_PASSWORD = "execed@rice"
+DEFAULT_PASSWORD = "jgsb!ai!"
 
 BANNER_STYLE = """
 body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #7C7E7F; color: #333; }
@@ -125,12 +125,12 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
     <a href="/">Logout</a>
 </div>
 <div class="workspace">
-    <div class="pane" id="pane-left" style="flex: 1 1 40%;">
+    <div class="pane" id="pane-left" style="flex: 1 1 30%;">
         <div class="pane-label">Files</div>
         <iframe src="/{username}/files/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
     </div>
     <div class="divider" id="divider"></div>
-    <div class="pane" id="pane-right" style="flex: 1 1 60%;">
+    <div class="pane" id="pane-right" style="flex: 1 1 70%;">
         <div class="pane-label">Terminal</div>
         <iframe src="/{username}/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
     </div>

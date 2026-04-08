@@ -139,7 +139,7 @@ ssh root@157.245.133.86 "cd /opt/biai-vm && git pull && bash provision-students.
 ssh root@157.245.133.86 "cat /etc/biai-ports"
 
 # Add a new user manually
-ssh root@157.245.133.86 "useradd -m -s /bin/bash -N <username> && echo '<username>:execed@rice' | chpasswd && bash /opt/biai-vm/setup-user.sh <username>"
+ssh root@157.245.133.86 "useradd -m -s /bin/bash -N <username> && echo '<username>:jgsb!ai!' | chpasswd && bash /opt/biai-vm/setup-user.sh <username>"
 
 # Re-provision all students from database
 ssh root@157.245.133.86 "cd /opt/biai-vm && source /etc/biai.env && bash provision-students.sh"
@@ -223,7 +223,7 @@ Internet → nginx (80/443)
 ## Notes
 
 - DNS for vm.kerryback.com is managed outside DigitalOcean (not in DO's DNS)
-- Default student password: `execed@rice`
+- Default student password: `jgsb!ai!`
 - The login app authenticates against Linux PAM (su)
 - filebrowser runs with --noauth (auth handled by login app session)
 - ttyd runs with --writable to allow terminal input
