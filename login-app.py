@@ -19,7 +19,7 @@ PROVISION_SECRET = os.environ.get("PROVISION_SECRET", "")
 # Simple session store: token -> (username, expiry)
 sessions: dict[str, tuple[str, float]] = {}
 SESSION_HOURS = 12
-DEFAULT_PASSWORD = "jgsb!ai!"
+DEFAULT_PASSWORD = "jgsbai"
 
 BANNER_STYLE = """
 body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #7C7E7F; color: #333; }

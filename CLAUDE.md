@@ -77,7 +77,7 @@ ttyd ports start at 9001, FileBrowser ports start at 10001.
 ### 2. Admin panel (runtime)
 
 - Admins log in at `ai-lab.rice-business.org` and add/delete users at `/admin`
-- Default password for new users: `jgsb!ai!`
+- Default password for new users: `jgsbai`
 - Calls `setup-user.sh` which creates the Linux user, workspace, services, registers in `/etc/biai-ports`, and regenerates nginx
 
 ## Key Files
