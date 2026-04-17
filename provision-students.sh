@@ -42,9 +42,16 @@ while IFS=: read -r USERNAME PASSWORD; do
 
         # Claude Code settings
         mkdir -p "/home/$USERNAME/.claude/skills"
+
+        # Global preferences (theme, etc.) — stored in ~/.claude.json
+        cat > "/home/$USERNAME/.claude.json" << 'CLAUDEJSON'
+{
+  "theme": "dark"
+}
+CLAUDEJSON
+
         cat > "/home/$USERNAME/.claude/settings.json" << SETTINGS
 {
-  "theme": "light",
   "env": {
     "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
   },
