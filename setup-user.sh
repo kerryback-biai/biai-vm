@@ -34,8 +34,12 @@ ln -sf /shared/data "$WORKSPACE/data"
 
 # Claude Code settings
 mkdir -p "/home/$USERNAME/.claude/skills"
-cat > "/home/$USERNAME/.claude/settings.json" << 'SETTINGS'
+cat > "/home/$USERNAME/.claude/settings.json" << SETTINGS
 {
+  "theme": "light",
+  "env": {
+    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+  },
   "permissions": {
     "allow": [
       "Bash(python*)",
@@ -57,8 +61,10 @@ cat > "/home/$USERNAME/.claude/settings.json" << 'SETTINGS'
       "Read",
       "Write",
       "Edit"
-    ]
-  }
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "skipDangerousModePermissionPrompt": true
 }
 SETTINGS
 
@@ -84,12 +90,26 @@ You are helping a student build a data agent from scratch.
 - When the student gets stuck, give hints rather than complete solutions
 CLAUDEMD
 
-# Add API key to user's environment (idempotent)
+# Add API key and auto-launch claude in .bashrc (idempotent)
 if ! grep -q "ANTHROPIC_API_KEY" "/home/$USERNAME/.bashrc" 2>/dev/null; then
-    echo "export ANTHROPIC_API_KEY=\"${ANTHROPIC_API_KEY}\"" >> "/home/$USERNAME/.bashrc"
+    cat >> "/home/$USERNAME/.bashrc" << BASHRC
+
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"
+
+# Auto-launch Claude Code
+if [ -t 1 ] && [ -z "\$CLAUDE_LAUNCHED" ]; then
+    export CLAUDE_LAUNCHED=1
+    cd ~/workspace
+    exec claude
+fi
+BASHRC
 fi
 
 chown -R "$USERNAME" "/home/$USERNAME"
+
+# Complete Claude Code first-run setup non-interactively
+# This accepts the API key so students never see the approval prompt
+su - "$USERNAME" -c "cd ~/workspace && ANTHROPIC_API_KEY='${ANTHROPIC_API_KEY}' claude -p 'hello' --max-turns 1" > /dev/null 2>&1 || true
 
 # Assign ports: hash username to a stable port pair
 # Use /etc/biai-ports to track assignments
@@ -99,13 +119,20 @@ touch "$PORTS_FILE"
 if grep -q "^$USERNAME:" "$PORTS_FILE"; then
     TTYD_PORT=$(grep "^$USERNAME:" "$PORTS_FILE" | cut -d: -f2)
     FB_PORT=$(grep "^$USERNAME:" "$PORTS_FILE" | cut -d: -f3)
+    TERM_PORT=$(grep "^$USERNAME:" "$PORTS_FILE" | cut -d: -f4)
+    # Backfill term port if missing (3-field legacy format)
+    if [ -z "$TERM_PORT" ]; then
+        TERM_PORT=$((TTYD_PORT + 2000))
+        sed -i "s/^$USERNAME:$TTYD_PORT:$FB_PORT$/$USERNAME:$TTYD_PORT:$FB_PORT:$TERM_PORT/" "$PORTS_FILE"
+    fi
 else
     # Find next available port pair
     LAST_TTYD=$(awk -F: '{print $2}' "$PORTS_FILE" | sort -n | tail -1)
     TTYD_PORT=${LAST_TTYD:-9000}
     TTYD_PORT=$((TTYD_PORT + 1))
     FB_PORT=$((TTYD_PORT + 1000))
-    echo "$USERNAME:$TTYD_PORT:$FB_PORT" >> "$PORTS_FILE"
+    TERM_PORT=$((TTYD_PORT + 2000))
+    echo "$USERNAME:$TTYD_PORT:$FB_PORT:$TERM_PORT" >> "$PORTS_FILE"
 fi
 
 # ttyd service
@@ -142,6 +169,25 @@ Restart=on-failure
 WantedBy=multi-user.target
 SYSTEMD
 
+# Plain terminal service (no claude auto-launch)
+cat > "/etc/systemd/system/ttyd-term-${USERNAME}.service" << SYSTEMD
+[Unit]
+Description=Plain terminal for $USERNAME
+After=network.target
+
+[Service]
+Type=simple
+User=$USERNAME
+Environment=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+Environment=CLAUDE_LAUNCHED=1
+WorkingDirectory=/home/$USERNAME/workspace
+ExecStart=/usr/local/bin/ttyd --port $TERM_PORT --writable --base-path /$USERNAME/term/ -t titleFixed="Terminal" bash -l
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD
+
 # Initialize FileBrowser database with proxy auth (no login required)
 FB_DB="/home/$USERNAME/.filebrowser.db"
 if [ ! -f "$FB_DB" ]; then
@@ -153,9 +199,10 @@ chown "$USERNAME" "$FB_DB"
 systemctl daemon-reload
 systemctl enable --now "ttyd-${USERNAME}.service"
 systemctl enable --now "filebrowser-${USERNAME}.service"
+systemctl enable --now "ttyd-term-${USERNAME}.service"
 
 # Regenerate nginx config
 bash /opt/biai-vm/generate-nginx.sh
 
-echo "Done: $USERNAME (terminal=:$TTYD_PORT, files=:$FB_PORT)"
+echo "Done: $USERNAME (claude=:$TTYD_PORT, files=:$FB_PORT, term=:$TERM_PORT)"
 echo "URL: https://ai-lab.rice-business.org/$USERNAME/"

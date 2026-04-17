@@ -42,8 +42,12 @@ while IFS=: read -r USERNAME PASSWORD; do
 
         # Claude Code settings
         mkdir -p "/home/$USERNAME/.claude/skills"
-        cat > "/home/$USERNAME/.claude/settings.json" << 'SETTINGS'
+        cat > "/home/$USERNAME/.claude/settings.json" << SETTINGS
 {
+  "theme": "light",
+  "env": {
+    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+  },
   "permissions": {
     "allow": [
       "Bash(python*)",
@@ -65,8 +69,10 @@ while IFS=: read -r USERNAME PASSWORD; do
       "Read",
       "Write",
       "Edit"
-    ]
-  }
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "skipDangerousModePermissionPrompt": true
 }
 SETTINGS
 
@@ -107,6 +113,11 @@ fi
 BASHRC
 
         chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
+
+        # Complete Claude Code first-run setup non-interactively
+        # This accepts the API key so students never see the approval prompt
+        su - "$USERNAME" -c "cd ~/workspace && ANTHROPIC_API_KEY='${ANTHROPIC_API_KEY}' claude -p 'hello' --max-turns 1" > /dev/null 2>&1 || true
+
         echo "  CREATED: $USERNAME (ttyd=$TTYD_PORT, files=$FB_PORT)"
     fi
 
