@@ -65,7 +65,7 @@ LOGIN_PAGE = """<!DOCTYPE html>
 <body>
 <div class="banner">
   <h1>AI Lab</h1>
-  <p>Rice Business Executive Education</p>
+  <p>Rice Business</p>
   {about}
 </div>
 <div class="card">
@@ -99,14 +99,25 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
 .toolbar a {{ color: rgba(255,255,255,0.7); text-decoration: none; font-size: 12px; }}
 .toolbar a:hover {{ color: #fff; }}
 .workspace {{ display: flex; height: calc(100% - 36px); }}
-.pane {{ overflow: hidden; position: relative; }}
-.pane iframe {{ width: 100%; height: 100%; border: none; }}
+.pane {{ overflow: hidden; display: flex; flex-direction: column; }}
+.pane iframe {{ flex: 1; width: 100%; border: none; }}
 .pane-label {{
-    position: absolute; top: 0; left: 0; right: 0; height: 24px;
+    height: 24px; flex-shrink: 0;
     background: rgba(0,32,91,0.85); color: #fff; font-size: 11px;
     display: flex; align-items: center; padding: 0 10px;
-    letter-spacing: 0.3px; z-index: 10; opacity: 0.9;
+    letter-spacing: 0.3px;
 }}
+.pane-label .tab {{
+    cursor: pointer; padding: 2px 10px; border-radius: 3px;
+    margin-right: 4px; transition: background 0.15s;
+}}
+.pane-label .tab:hover {{ background: rgba(255,255,255,0.15); }}
+.pane-label .tab.active {{ background: rgba(255,255,255,0.25); font-weight: 600; }}
+.pane-label .refresh-btn {{
+    cursor: pointer; margin-left: auto; padding: 1px 6px; border-radius: 3px;
+    font-size: 13px; line-height: 1; transition: background 0.15s; opacity: 0.7;
+}}
+.pane-label .refresh-btn:hover {{ background: rgba(255,255,255,0.15); opacity: 1; }}
 .divider {{
     width: 5px; background: #00205B; cursor: col-resize;
     flex-shrink: 0; position: relative; z-index: 20;
@@ -118,7 +129,7 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
 <div class="toolbar">
     <span class="title">AI Lab</span>
     <span class="sep">|</span>
-    <span class="subtitle">Rice Business Executive Education</span>
+    <span class="subtitle">Rice Business</span>
     <span class="spacer"></span>
     <span style="opacity:0.7">{username}</span>
     {admin_link}
@@ -126,13 +137,17 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
 </div>
 <div class="workspace">
     <div class="pane" id="pane-left" style="flex: 1 1 30%;">
-        <div class="pane-label">Files</div>
-        <iframe src="/{username}/files/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
+        <div class="pane-label">
+            <span class="tab active" id="tab-files" onclick="switchLeft('files')">Files</span>
+            <span class="tab" id="tab-term" onclick="switchLeft('term')">Terminal</span>
+            <span class="refresh-btn" id="refresh-btn" title="Refresh" onclick="refreshLeft()">&#x21bb;</span>
+        </div>
+        <iframe id="left-iframe" src="/{username}/files/"></iframe>
     </div>
     <div class="divider" id="divider"></div>
     <div class="pane" id="pane-right" style="flex: 1 1 70%;">
-        <div class="pane-label">Terminal</div>
-        <iframe src="/{username}/" style="padding-top:24px; height:calc(100% + 24px); margin-top:-24px;"></iframe>
+        <div class="pane-label">Claude Code</div>
+        <iframe src="/{username}/"></iframe>
     </div>
 </div>
 <script>
@@ -142,6 +157,28 @@ html, body {{ height: 100%; overflow: hidden; font-family: Arial, sans-serif; }}
     const right = document.getElementById('pane-right');
     const workspace = document.querySelector('.workspace');
     let dragging = false;
+
+    // Refresh left pane iframe
+    window.refreshLeft = function() {{
+        const iframe = document.getElementById('left-iframe');
+        iframe.src = iframe.src;
+    }};
+
+    // Left pane tab switching
+    window.switchLeft = function(mode) {{
+        const iframe = document.getElementById('left-iframe');
+        const tabFiles = document.getElementById('tab-files');
+        const tabTerm = document.getElementById('tab-term');
+        if (mode === 'files') {{
+            iframe.src = '/{username}/files/';
+            tabFiles.classList.add('active');
+            tabTerm.classList.remove('active');
+        }} else {{
+            iframe.src = '/{username}/term/';
+            tabTerm.classList.add('active');
+            tabFiles.classList.remove('active');
+        }}
+    }};
 
     divider.addEventListener('mousedown', function(e) {{
         dragging = true;
@@ -182,7 +219,7 @@ ADMIN_PAGE = """<!DOCTYPE html>
 <body>
 <div class="banner">
   <h1>AI Lab</h1>
-  <p>Rice Business Executive Education</p>
+  <p>Rice Business</p>
   {about}
 </div>
 <div class="card admin-card">
