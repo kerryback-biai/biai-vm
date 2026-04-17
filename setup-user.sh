@@ -38,7 +38,7 @@ mkdir -p "/home/$USERNAME/.claude/skills"
 # Global preferences (theme, etc.) — stored in ~/.claude.json
 cat > "/home/$USERNAME/.claude.json" << 'CLAUDEJSON'
 {
-  "theme": "dark"
+  "theme": "light"
 }
 CLAUDEJSON
 
@@ -153,7 +153,7 @@ Type=simple
 User=$USERNAME
 Environment=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 WorkingDirectory=/home/$USERNAME/workspace
-ExecStart=/usr/local/bin/ttyd --port $TTYD_PORT --writable --base-path /$USERNAME/ -t titleFixed="AI Lab" bash -l
+ExecStart=/usr/local/bin/ttyd --port $TTYD_PORT --writable --base-path /$USERNAME/ -t titleFixed="AI Lab" -t 'theme={"background":"#ffffff","foreground":"#000000","cursor":"#000000","selectionBackground":"#b0c4de"}' bash -l
 Restart=on-failure
 
 [Install]
@@ -188,7 +188,7 @@ User=$USERNAME
 Environment=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 Environment=CLAUDE_LAUNCHED=1
 WorkingDirectory=/home/$USERNAME/workspace
-ExecStart=/usr/local/bin/ttyd --port $TERM_PORT --writable --base-path /$USERNAME/term/ -t titleFixed="Terminal" bash -l
+ExecStart=/usr/local/bin/ttyd --port $TERM_PORT --writable --base-path /$USERNAME/term/ -t titleFixed="Terminal" -t 'theme={"background":"#ffffff","foreground":"#000000","cursor":"#000000","selectionBackground":"#b0c4de"}' bash -l
 Restart=on-failure
 
 [Install]
