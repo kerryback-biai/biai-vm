@@ -29,13 +29,17 @@ pip3 install --break-system-packages anthropic duckdb pandas numpy matplotlib fa
 
 # 5. Create shared data directory
 echo "[5/7] Setting up shared data..."
-mkdir -p /shared/data
-# Copy parquet files (assumes they've been uploaded to /tmp/meridian/)
-if [ -d /tmp/meridian ]; then
-    cp -r /tmp/meridian/* /shared/data/
-    echo "  Copied data files from /tmp/meridian/"
+mkdir -p /shared/data/dashboard /shared/data/portfolio /shared/data/salesforce
+# Copy data files (assumes they've been uploaded to /tmp/biai-data/)
+if [ -d /tmp/biai-data ]; then
+    cp -r /tmp/biai-data/* /shared/data/
+    echo "  Copied data files from /tmp/biai-data/"
 else
-    echo "  WARNING: /tmp/meridian/ not found. Upload parquet files there first."
+    echo "  WARNING: /tmp/biai-data/ not found. Upload data there first."
+    echo "  Expected structure:"
+    echo "    /tmp/biai-data/dashboard/  (sales.csv, customers.csv, employees.csv)"
+    echo "    /tmp/biai-data/portfolio/  (portfolio_lots.xlsx, client_info.md, stock_data.md)"
+    echo "    /tmp/biai-data/salesforce/ (parquet files for agent exercises)"
 fi
 chmod -R 755 /shared/data
 
@@ -71,7 +75,10 @@ chmod -R 755 /shared/skills
 echo ""
 echo "=== Setup complete ==="
 echo "Next steps:"
-echo "  1. Upload parquet files to /tmp/meridian/ if not done"
+echo "  1. Upload data to /tmp/biai-data/ if not done:"
+echo "       dashboard/  (sales.csv, customers.csv, employees.csv)"
+echo "       portfolio/  (portfolio_lots.xlsx, client_info.md, stock_data.md)"
+echo "       salesforce/ (parquet files for agent exercises)"
 echo "  2. Upload exercise templates to /tmp/templates/ if not done"
 echo "  3. Upload Claude Code skills to /tmp/skills/ if not done"
 echo "     (xlsx/, docx/, pptx/ directories each containing SKILL.md)"

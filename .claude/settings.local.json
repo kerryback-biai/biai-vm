@@ -3,7 +3,17 @@
     "allow": [
       "Bash(koyeb app:*)",
       "Bash(koyeb organization:*)",
-      "Bash(koyeb organizations:*)"
+      "Bash(koyeb organizations:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find /c/Users/kerry/repos/biai-lab /c/Users/kerry/repos/biai-lab-qwen -name *.env -o -name .env*)",
+      "WebSearch",
+      "Bash(doctl compute:*)",
+      "WebFetch(domain:www.hetzner.com)",
+      "WebFetch(domain:costgoat.com)",
+      "Bash(grep -E \"\\\\.sh$|\\\\.py$|\\\\.service$|\\\\.md$\")",
+      "Bash(grep -r \"DATABASE_URL\\\\|biai.env\\\\|biai-ports\" /c/Users/kerry/repos/biai-lab/*.sh /c/Users/kerry/repos/biai-lab/*.py)"
     ]
   }
 }

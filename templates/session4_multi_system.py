@@ -23,7 +23,7 @@ Data files are in:
   data/workday/wd_compensation.parquet
   data/workday/wd_system_ids.parquet
 
-Run with: python ex2_multi_system.py
+Run with: python session4_multi_system.py
 """
 import anthropic
 import duckdb
@@ -48,7 +48,7 @@ SYSTEMS = {
 
 SYSTEM_PROMPT = """You are a data analyst with access to two enterprise systems:
 
-**salesforce** (Meridian Industrial CRM):
+**salesforce** (XYZ Corp Industrial CRM):
   - sf_accounts: AccountId, AccountName, Industry, BillingState, OwnerId, AnnualRevenue, Type
   - sf_orders: OrderId, AccountId, OpportunityId, OrderDate, TotalAmount, Status
 
@@ -119,7 +119,7 @@ def ask(question):
 
 
 if __name__ == "__main__":
-    print("Meridian Corp Multi-System Agent (Exercise 2)")
+    print("XYZ Corp Multi-System Agent (Exercise 2)")
     print("You can ask questions that span Salesforce and Workday.\n")
 
     while True:

@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 EnvironmentFile=/etc/biai.env
-ExecStart=/usr/bin/uvicorn proxy:app --host 127.0.0.1 --port 8080 --workers 2
+ExecStart=/usr/local/bin/uvicorn proxy:app --host 127.0.0.1 --port 8080 --workers 2
 WorkingDirectory=/opt/biai-vm/api-proxy
 Restart=on-failure
 RestartSec=5

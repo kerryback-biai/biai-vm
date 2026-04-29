@@ -12,7 +12,7 @@ Build a simple agent that:
 The data file is: data/salesforce/sf_accounts.parquet
 It contains: AccountId, AccountName, Industry, BillingState, OwnerId, AnnualRevenue, Type
 
-Run with: python ex1_hello_agent.py
+Run with: python session4_hello_agent.py
 """
 import anthropic
 import duckdb
@@ -51,7 +51,7 @@ TOOLS = [
 def run_query(sql):
     """Execute SQL against the parquet file and return results."""
     con = duckdb.connect()
-    con.execute("CREATE VIEW sf_accounts AS SELECT * FROM read_parquet('data/salesforce/sf_accounts.parquet')")
+    con.execute("CREATE VIEW sf_accounts AS SELECT * FROM read_parquet('../data/salesforce/sf_accounts.parquet')")
     result = con.execute(sql)
     columns = [desc[0] for desc in result.description]
     rows = result.fetchall()
@@ -75,7 +75,7 @@ def ask(question):
 
 # --- Main ---
 if __name__ == "__main__":
-    print("Meridian Corp Data Agent (Exercise 1)")
+    print("XYZ Corp Data Agent (Exercise 1)")
     print("Type a question about Salesforce accounts, or 'quit' to exit.\n")
 
     while True:

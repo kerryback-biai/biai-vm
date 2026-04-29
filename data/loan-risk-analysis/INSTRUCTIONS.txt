@@ -1,0 +1,17 @@
+EXERCISE 3: Loan Portfolio Risk Filtering
+==========================================
+
+Files:
+- loan_tape.xlsx: 220 loans with borrower data, FICO, LTV, DTI, state, status, etc.
+- state_regulations.pdf: Regulatory thresholds for 6 states (embedded in narrative text)
+- risk_policy.docx: Internal 4-tier risk classification system with special conditions
+
+TASKS (use Claude Code):
+1. Extract regulatory rules from the PDF (state-specific LTV caps, FICO thresholds, DTI limits)
+2. Extract the risk tier criteria from the Word doc
+3. Assign each loan a risk tier per the internal policy
+4. Apply state-specific regulatory flags where applicable
+5. Check for special conditions (concentration risk, vintage risk, rate risk, combined stress)
+6. Produce a risk report with: tier distribution, state breakdown, flagged loans, total reserves needed
+
+CHALLENGES: Rules embedded in dense narrative text (not tables), overlapping criteria between state regs and internal policy, "any" vs "all" logic in tier assignment, special conditions that override normal tiering.

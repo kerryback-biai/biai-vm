@@ -8,9 +8,9 @@ This starter gives you the web framework. Your job:
   2. Make it stream responses back to the browser
 
 When done, run with:
-  python ex3_web_app.py
+  python session4_web_app.py
 
-Then open http://localhost:8000 in your browser.
+Then open http://localhost:8080 in your browser.
 
 Hint: Ask Claude Code to help you! Say:
   "Help me turn my ex2 agent into a FastAPI web app with streaming"
@@ -37,7 +37,7 @@ HTML = """
 </style>
 </head>
 <body>
-  <h2>Meridian Corp Data Agent</h2>
+  <h2>XYZ Corp Data Agent</h2>
   <div id="messages"></div>
   <form onsubmit="send(event)">
     <input id="input" placeholder="Ask a question..." autofocus>
@@ -105,4 +105,4 @@ def chat(q: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
